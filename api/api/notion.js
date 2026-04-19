@@ -1,17 +1,16 @@
+export const config = { api: { bodyParser: true } };
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Notion-Version');
 
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const notionPath = req.query.path;
-  if (!notionPath) {
-    return res.status(400).json({ error: 'path is required' });
-  }
+  const { path } = req.query;
+  if (!path) return res.status(400).json({ error: 'path is required' });
 
+  const notionPath = Array.isArray(path) ? path.join('/') : path;
   const notionUrl = `https://api.notion.com/v1/${notionPath}`;
 
   try {
@@ -22,9 +21,8 @@ export default async function handler(req, res) {
         'Notion-Version': '2022-06-28',
         'Content-Type': 'application/json',
       },
-      body: req.method !== 'GET' ? JSON.stringify(req.body) : undefined,
+      body: req.method === 'POST' ? JSON.stringify(req.body) : undefined,
     });
-
     const data = await response.json();
     return res.status(response.status).json(data);
   } catch (e) {
